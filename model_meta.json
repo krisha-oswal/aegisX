@@ -1,0 +1,48 @@
+{
+    "features": [
+        "amount",
+        "category_encoded",
+        "flow_duration",
+        "total_fwd_packets",
+        "total_bwd_packets",
+        "fwd_packet_len_max",
+        "bwd_packet_len_max",
+        "dest_port",
+        "protocol",
+        "tel_label_encoded",
+        "pqc_compliant",
+        "class_encoded",
+        "ip_anomaly"
+    ],
+    "category_map": {
+        "es_barsandrestaurants": 0,
+        "es_contents": 1,
+        "es_fashion": 2,
+        "es_food": 3,
+        "es_health": 4,
+        "es_home": 5,
+        "es_hotelservices": 6,
+        "es_hyper": 7,
+        "es_leisure": 8,
+        "es_otherservices": 9,
+        "es_sportsandtoys": 10,
+        "es_tech": 11,
+        "es_transportation": 12,
+        "es_travel": 13,
+        "es_wellnessandbeauty": 14
+    },
+    "tel_label_map": {
+        "BENIGN": 0,
+        "FTP-Patator": 1,
+        "NONE": 2,
+        "SSH-Patator": 3,
+        "Web Attack \ufffd Brute Force": 4,
+        "Web Attack \ufffd XSS": 5
+    },
+    "class_map": {
+        "Confidential": 0,
+        "HNDL": 1,
+        "NONE": 2,
+        "Public": 3
+    }
+}

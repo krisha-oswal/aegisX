@@ -1,0 +1,24 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Databases & local logs
+aegisx.db
+error.log
+
+# Model files (joblib bin)
+xgb_model.joblib
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# Large Datasets folder containing raw CSVs/ZIPs
+data/
