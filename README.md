@@ -33,23 +33,25 @@ AegisX fuses network telemetry and transactional behaviour into a single correla
 
 ```mermaid
 graph TD
-    %% Styling
-    classDef source fill:#1f2937,stroke:#3b82f6,stroke-width:2px,color:#fff;
-    classDef processor fill:#111827,stroke:#10b981,stroke-width:2px,color:#fff;
-    classDef model fill:#1e1b4b,stroke:#8b5cf6,stroke-width:2px,color:#fff;
-    classDef ui fill:#374151,stroke:#f59e0b,stroke-width:2px,color:#fff;
 
     %% Nodes
-    A[Telemetry <br> CICIDS2017]:::source
-    B[Transactions <br> BankSim]:::source
-    C[Telemetry Correlator]:::processor
-    D[Risk Engine / Orchestrator]:::processor
-    E[XGBoost Risk Model]:::model
-    F[SHAP Explainability]:::model
-    G[LLM Ollama <br> Plain-Language Summary]:::model
-    H[Analyst Dashboard <br> + Feedback Loop]:::ui
+    A["Telemetry<br/>CICIDS2017"]
+    B["Transactions<br/>BankSim"]
 
-    %% Flows
+    C["Telemetry Correlator"]
+    D["Risk Engine / Orchestrator"]
+
+    E["XGBoost Risk Model"]
+    F["SHAP Explainability"]
+    G["LLM (Ollama)<br/>Plain-Language Summary"]
+
+    H["Analyst Dashboard<br/>Feedback Loop"]
+
+    subgraph Data_Ingestion
+        A
+        B
+    end
+
     A --> C
     B --> C
     C --> D
@@ -57,18 +59,12 @@ graph TD
     E --> F
     F --> G
     G --> H
-    
-    %% Feedback Loops
-    H -.->|Refine Rules| C
-    H -.->|Trigger Re-orchestration| D
 
-    %% Layout direction tweak
-    subgraph Data Ingestion
-        A
-        B
-    end
+    H -. "Refine Rules" .-> C
+    H -. "Trigger Re-orchestration" .-> D
+```
 
-A Quantum-Proof Cryptography module runs alongside the main pipeline, scoring sessions/transactions for post-quantum ("harvest now, decrypt later") exposure.
+Quantum-Proof Cryptography module runs alongside the main pipeline, scoring sessions/transactions for post-quantum ("harvest now, decrypt later") exposure.
 
 ## Installation
 
