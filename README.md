@@ -10,61 +10,74 @@ Banking security teams typically monitor network telemetry (intrusion detection,
 
 AegisX fuses network telemetry and transactional behaviour into a single correlated risk pipeline, explains every flag in plain language, learns from analyst feedback, and scores exposure to future quantum decryption risk — all in one system instead of stitched-together tools.
 
+Detection runs as a **two-stage pipeline**: a fast, transparent, recall-focused first pass catches every transaction worth a second look, and a precision-focused correlation stage — fusing telemetry, transaction, and quantum-exposure signal — narrows that down to the alerts actually worth an analyst's time.
+
 ## Features
 
-- **Live Threat Correlation** — cross-references live telemetry events against transactional behaviour in real time to catch coordinated attack patterns that look benign on either signal alone
+- **Two-Stage Threat Correlation** — a recall-focused Primary Risk Engine flags every transaction worth a second look; a precision-focused Meta XGBoost model then fuses that flag with live telemetry and transactional context to filter out the noise, catching coordinated attack patterns that look benign on either signal alone
 - **Session Reconstruction** — rebuilds the full sequence of an attacker's session from fragmented telemetry events into a single readable timeline
 - **Explainable AI (SHAP + LLM)** — every risk score is broken down feature-by-feature with SHAP, then summarized into a plain-language explanation by a local LLM, so analysts don't have to interpret raw model output
 - **Analyst Feedback Loop** — analysts can confirm or dismiss flags, feeding back into the system to reduce false positives over time
-- **Post-Quantum Risk Scoring** — flags transactions/sessions with the highest exposure to future "harvest now, decrypt later" quantum decryption risk
-- **Proactive Telemetry Detection** — surfaces early-stage recon and intrusion patterns (e.g. port scans, brute-force attempts) before they escalate into a confirmed breach
+- **Post-Quantum Risk Scoring, Fused Into the Score** — sessions touching assets flagged for "harvest now, decrypt later" exposure carry a real, weighted increase in their composite risk score — quantum exposure is a direct input to detection, not a separate report sitting next to it
+- **Proactive Telemetry Detection** — surfaces early-stage recon and intrusion patterns (e.g. port scans, brute-force attempts) before they escalate into a confirmed breach, even with no transaction attached yet
 
 ## Tech Stack
 
+- **Stage 1 — Primary Risk Engine** — a transparent, rule-based heuristic over transaction-only features (amount, frequency, merchant risk category), tuned for high recall
+- **Stage 2 — Meta XGBoost Model** — consumes the Stage 1 score alongside telemetry features and quantum-exposure signal to produce the final, precision-focused composite threat score
 - **Risk Engine / Orchestrator** — coordinates the correlation pipeline end to end
 - **Telemetry Correlator** — fuses network telemetry with transactional data
-- **XGBoost** — core risk classification model
-- **SHAP** — feature-level explainability on top of model output
+- **SHAP** — feature-level explainability on top of Stage 2's output
 - **LLM (Ollama, local)** — turns SHAP output into plain-language analyst summaries
-- **Quantum-Proof Cryptography module** — post-quantum / HNDL risk scoring
+- **Quantum-Proof Cryptography module** — maintains the post-quantum / HNDL exposure registry that feeds Stage 2's risk multiplier
 - Data: [BankSim](https://github.com/EdgarLopezPhD/PaySim) (simulated transactions) fused with [CICIDS2017](https://www.unb.ca/cic/datasets/ids-2017.html) (real intrusion telemetry) via a synthetic identity/linkage layer
 
 ## Architecture
 
 ```mermaid
 graph TD
-
-    %% Nodes
     A["Telemetry<br/>CICIDS2017"]
     B["Transactions<br/>BankSim"]
 
-    C["Telemetry Correlator"]
-    D["Risk Engine / Orchestrator"]
-
-    E["XGBoost Risk Model"]
-    F["SHAP Explainability"]
-    G["LLM (Ollama)<br/>Plain-Language Summary"]
-
-    H["Analyst Dashboard<br/>Feedback Loop"]
-
-    subgraph Data_Ingestion
+    subgraph Data_Ingestion["Data Ingestion & Fusion"]
         A
         B
+        ID["Identity Fabric &<br/>Incident Injection"]
+        A --> ID
+        B --> ID
     end
 
-    A --> C
-    B --> C
-    C --> D
-    D --> E
-    E --> F
-    F --> G
-    G --> H
+    subgraph Stage_1["Stage 1: Primary Risk Engine (Recall-focused)"]
+        S1["Transaction Heuristic Scorer"]
+    end
 
-    H -. "Refine Rules" .-> C
-    H -. "Trigger Re-orchestration" .-> D
+    ID --> S1
+    ID -->|Raw Telemetry| TC["Telemetry Correlator"]
+
+    QM["Quantum Module<br/>PQC / HNDL Registry"]
+
+    subgraph Stage_2["Stage 2: Meta XGBoost (Precision-focused)"]
+        XGB["XGBoost Meta-Model"]
+    end
+
+    S1 -->|Stage 1 Score as Feature| XGB
+    TC -->|Telemetry Features| XGB
+    QM -->|HNDL Risk Multiplier| XGB
+
+    XGB --> SHAP["SHAP Explainability"]
+    SHAP --> LLM["LLM Ollama<br/>Plain-Language Summary"]
+
+    XGB --> DASH["Analyst Dashboard"]
+    SHAP --> DASH
+    LLM --> DASH
+
+    DASH --> FB["Analyst Feedback Loop"]
+    FB -. "Logged for future retraining" .-> DB[("SQLite Event Store")]
+    S1 -.-> DB
+    ID -.-> DB
 ```
 
-Quantum-Proof Cryptography module runs alongside the main pipeline, scoring sessions/transactions for post-quantum ("harvest now, decrypt later") exposure.
+Stage 1 is deliberately noisy — it exists to make sure nothing suspicious is missed before richer context is applied. Stage 2 brings precision back up by fusing in telemetry and quantum-exposure signal, which is also where the false-positive reduction actually happens: the gap between Stage 1's alert volume and Stage 2's filtered output is the concrete, measurable mechanism behind that number, not just a headline stat.
 
 ## Installation
 
@@ -85,8 +98,6 @@ streamlit run app.py
 ```
 
 ## Demo
-
-
 
 The repository includes a seeded demo database (15 sample alerts, 4 analyst feedback logs) so the app is populated and demoable immediately after cloning — no manual data setup required.
 
