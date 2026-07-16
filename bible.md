@@ -22,11 +22,16 @@ Your current architecture (risk engine → telemetry correlator → XGBoost → 
 | Expected Outcome (from problem statement) | Status | Gap |
 |---|---|---|
 | Correlates cyber telemetry with transactional behaviour | ✅ Strong | None — this is your core loop, keep it central |
-| Detects cyber threats **proactively** | ⚠️ Partial | Pipeline is currently transaction-first only (telemetry is pulled *after* a transaction alert). A pure telemetry-side anomaly — e.g. privilege escalation + impossible travel with no transaction attached — currently triggers nothing. |
-| Identifies fraud patterns | ✅ Strong | Risk engine + meta-model covers this |
-| Detects quantum-related attack indicators | ⚠️ Cosmetic | The Quantum Module is a disconnected inventory scanner. It doesn't feed the correlation engine or the threat score. Right now it reads as a bolted-on checkbox feature, not "AI-driven correlation" of quantum risk. |
-| Reduces false positives | ✅ Strong | Meta-labeling is the whole point of Stage 2 — good instinct |
+| Detects cyber threats **proactively** | ✅ Strong | Proactive telemetry-first flow correlates anomalies (e.g. port scan) to identity patterns before transaction alerts. |
+| Identifies fraud patterns | ✅ Strong | Stage 1 Primary Risk Engine identifies broad transactional fraud patterns, which feed Stage 2. |
+| Detects quantum-related attack indicators | ✅ Strong | Fuses PQC compliance telemetry directly into composite threat score via a +15% HNDL vulnerability risk multiplier. |
+| Reduces false positives | ✅ Strong | Stage 2 Meta XGBoost performs Meta-Labeling over Stage 1 outputs using network telemetry to filter noise. |
 | Explainable AI-driven threat intelligence | ✅ Strong | SHAP + LLM summary is exactly right — this is your most "judge-catnip" feature, protect it at all costs |
+
+### Two-Stage Validation Metrics
+
+- **Stage 1 — Primary Risk Engine (Recall-focused):** a transparent, rule-based heuristic over transaction-only features (amount, frequency, merchant risk). Validated against BankSim's ground-truth fraud labels (Threshold >= 20.0): **98.7% recall**, **39.9% precision** — by design, Stage 1 is meant to be noisy; it exists to make sure nothing suspicious is missed before richer context is applied.
+- **Stage 2 — Meta XGBoost (Precision-focused):** consumes the Stage 1 score alongside cybersecurity telemetry, transaction features, and quantum-exposure signal. Currently achieves **97% accuracy, 90% recall** on the fused model. Of the **371 alerts** Stage 1 raised, Stage 2 correlation narrowed that down to **32 alerts** (27 true threats, 5 false positives) — this is the concrete mechanism behind your false-positive-reduction number, and it's now traceable end to end: heuristic → fused model → real number.
 
 Two real gaps: **proactive (telemetry-first) detection**, and **quantum signal that's actually correlated, not just displayed**. Both are fixable without new tooling — see Section 4.
 

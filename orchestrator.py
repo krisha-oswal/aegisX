@@ -15,6 +15,36 @@ DB_PATH = os.path.join(BASE_DIR, 'aegisx.db')
 MODEL_PATH = os.path.join(BASE_DIR, 'xgb_model.joblib')
 META_PATH = os.path.join(BASE_DIR, 'model_meta.json')
 
+def calculate_stage1_score(amount: float, category: str) -> float:
+    """Stage 1: Primary Risk Engine (recall-focused transaction-only risk score)."""
+    score = 0.0
+    
+    # Base risk by amount
+    if amount > 1000:
+        score += 65.0
+    elif amount > 500:
+        score += 45.0
+    elif amount > 200:
+        score += 30.0
+    elif amount > 50:
+        score += 15.0
+    else:
+        score += 5.0
+        
+    # Base risk by merchant category
+    high_risk_cats = ['es_travel', 'es_leisure', 'es_sportsandtoys', 'es_wellnessandbeauty']
+    med_risk_cats = ['es_hotelsandservices', 'es_home', 'es_health']
+    
+    cat_clean = str(category).strip().strip("'").strip('"')
+    if cat_clean in high_risk_cats:
+        score += 30.0
+    elif cat_clean in med_risk_cats:
+        score += 15.0
+    else:
+        score += 5.0
+        
+    return min(score, 100.0)
+
 class SecurityOrchestrator:
     def __init__(self):
         self.model = None
@@ -162,6 +192,10 @@ class SecurityOrchestrator:
             # Feature Engineering: IP anomaly check
             ip_anomaly = 1 if str(ip_address).startswith('103.45.68') else 0
 
+            # Stage 1 Score: Primary Recall-focused transaction risk
+            stage1_score = calculate_stage1_score(amount, category)
+            session["stage1_score"] = stage1_score
+
             # 2. Build Feature Vector (aligned with meta mapping)
             cat_code = self.meta["category_map"].get(category, 0) if self.meta else 0
             tel_code = self.meta["tel_label_map"].get(tel_label, 0) if self.meta else 0
@@ -180,7 +214,8 @@ class SecurityOrchestrator:
                 "tel_label_encoded": tel_code,
                 "pqc_compliant": pqc_compliant,
                 "class_encoded": class_code,
-                "ip_anomaly": ip_anomaly
+                "ip_anomaly": ip_anomaly,
+                "stage1_score": stage1_score
             }
             
             # Predict XGBoost Score
@@ -300,6 +335,8 @@ class SecurityOrchestrator:
                         shift = 2.5 * importance if val == 1 else -0.1 * importance
                     elif col == 'pqc_compliant':
                         shift = 1.5 * importance if val == 0 else -0.2 * importance
+                    elif col == 'stage1_score':
+                        shift = (val / 100.0) * importance if val > 20 else -0.1 * importance
                     else:
                         shift = 0.5 * importance if val > 0 else -0.05 * importance
                     

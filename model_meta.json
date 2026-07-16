@@ -12,7 +12,8 @@
         "tel_label_encoded",
         "pqc_compliant",
         "class_encoded",
-        "ip_anomaly"
+        "ip_anomaly",
+        "stage1_score"
     ],
     "category_map": {
         "es_barsandrestaurants": 0,

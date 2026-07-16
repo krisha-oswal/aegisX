@@ -13,6 +13,36 @@ DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'aegisx.db')
 MODEL_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'xgb_model.joblib')
 META_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'model_meta.json')
 
+def calculate_stage1_score(amount: float, category: str) -> float:
+    """Stage 1: Primary Risk Engine (recall-focused transaction-only risk score)."""
+    score = 0.0
+    
+    # Base risk by amount
+    if amount > 1000:
+        score += 65.0
+    elif amount > 500:
+        score += 45.0
+    elif amount > 200:
+        score += 30.0
+    elif amount > 50:
+        score += 15.0
+    else:
+        score += 5.0
+        
+    # Base risk by merchant category
+    high_risk_cats = ['es_travel', 'es_leisure', 'es_sportsandtoys', 'es_wellnessandbeauty']
+    med_risk_cats = ['es_hotelsandservices', 'es_home', 'es_health']
+    
+    cat_clean = str(category).strip().strip("'").strip('"')
+    if cat_clean in high_risk_cats:
+        score += 30.0
+    elif cat_clean in med_risk_cats:
+        score += 15.0
+    else:
+        score += 5.0
+        
+    return min(score, 100.0)
+
 def train_model():
     """Queries fused dataset, preprocesses features, trains XGBoost model, and saves it."""
     try:
@@ -65,6 +95,9 @@ def train_model():
         # In generator.py, incidents write external IP "103.45.68.X", whereas normal is "192.168.1.X"
         df['ip_anomaly'] = df['tx_ip'].apply(lambda ip: 1 if str(ip).startswith('103.45.68') else 0)
 
+        # Stage 1 Score: Primary recall-focused transaction risk
+        df['stage1_score'] = df.apply(lambda r: calculate_stage1_score(r['amount'], r['category']), axis=1)
+
         # Categorical Encoders (using explicit mapping for demo predictability and simplicity)
         categories = sorted(df['category'].unique().tolist())
         category_map = {cat: idx for idx, cat in enumerate(categories)}
@@ -80,12 +113,13 @@ def train_model():
         df['tel_label_encoded'] = df['tel_label'].map(tel_label_map)
         df['class_encoded'] = df['data_classification'].map(class_map)
 
-        # Feature Selection
+        # Feature Selection (Two-Stage Meta-Labeling: stage1_score acts as Primary input)
         feature_cols = [
             'amount', 'category_encoded', 'flow_duration', 
             'total_fwd_packets', 'total_bwd_packets', 'fwd_packet_len_max', 
             'bwd_packet_len_max', 'dest_port', 'protocol', 
-            'tel_label_encoded', 'pqc_compliant', 'class_encoded', 'ip_anomaly'
+            'tel_label_encoded', 'pqc_compliant', 'class_encoded', 'ip_anomaly',
+            'stage1_score'
         ]
 
         X = df[feature_cols]
