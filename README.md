@@ -30,7 +30,25 @@ Detection runs as a **two-stage pipeline**: a fast, transparent, recall-focused 
 - **SHAP** — feature-level explainability on top of Stage 2's output
 - **LLM (Ollama, local)** — turns SHAP output into plain-language analyst summaries
 - **Quantum-Proof Cryptography module** — maintains the post-quantum / HNDL exposure registry that feeds Stage 2's risk multiplier
-- Data: [BankSim](https://github.com/EdgarLopezPhD/PaySim) (simulated transactions) fused with [CICIDS2017](https://www.unb.ca/cic/datasets/ids-2017.html) (real intrusion telemetry) via a synthetic identity/linkage layer
+- Data: BankSim (simulated transactions) fused with CICIDS2017 (real intrusion telemetry) via a synthetic identity/linkage layer — see [Datasets](#datasets) below
+
+## Datasets
+
+| Dataset | Purpose | Link |
+|---|---|---|
+| **BankSim** | Agent-based bank payment simulator calibrated on aggregated real banking behaviour — provides realistic customer transaction distributions and fraud labels | [kaggle.com/datasets/ealaxi/banksim1](https://www.kaggle.com/datasets/ealaxi/banksim1?hl=en-US) |
+| **CICIDS2017** | Real, benchmark intrusion-detection dataset from the Canadian Institute for Cybersecurity — provides real attack traffic signatures (brute force, web attacks, port scans) | [unb.ca/cic/datasets/ids-2017.html](https://www.unb.ca/cic/datasets/ids-2017.html) |
+
+Neither dataset shares a customer ID, IP space, or clock with the other — AegisX's Identity Fabric and Incident Injection layer (see Architecture below) is what links a specific CICIDS2017 attack signature to a specific BankSim customer transaction. The linkage itself is synthetic; the transaction behaviour and attack signatures underneath it are both drawn from real data.
+
+## Acknowledgments
+
+AegisX would not exist without the researchers and institutions behind the two datasets it's built on:
+
+- **[BankSim](https://www.kaggle.com/datasets/ealaxi/banksim1?hl=en-US)** — an agent-based simulation of bank payments, developed by Edgar Alonso Lopez-Rojas and colleagues, calibrated on aggregated real transaction data from a bank in Spain. Thank you for making a realistic, privacy-preserving financial fraud dataset publicly available to the research and developer community.
+- **[CICIDS2017](https://www.unb.ca/cic/datasets/ids-2017.html)** — a real, labeled intrusion-detection benchmark developed by the Canadian Institute for Cybersecurity (CIC) at the University of New Brunswick. Thank you for providing a rigorously constructed, freely accessible dataset of real attack traffic that made the network telemetry side of this project possible.
+
+We're grateful to both teams for the work that went into building and sharing these datasets — this project simply wouldn't have real data to correlate without them.
 
 ## Architecture
 
