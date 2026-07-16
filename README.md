@@ -100,7 +100,7 @@ Stage 1 is deliberately noisy — it exists to make sure nothing suspicious is m
 ## Installation
 
 ```bash
-git clone https://github.com/<your-username>/aegisx.git
+git clone https://github.com/krisha-oswal/aegisx.git
 cd aegisx
 python -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
